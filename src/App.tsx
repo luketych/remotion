@@ -49,7 +49,7 @@ function App() {
       console.log('Clip created successfully:', url);
       
       setClippedVideos(prev => [...prev, {
-        url: `/${outputFileName}`,
+        url,  // Use the full URL returned by clipVideo (includes /clips/)
         startTime,
         endTime,
       }]);

@@ -10,8 +10,20 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = 3000;
 
-// Enable CORS for all routes
+// Enable CORS for all routes with specific headers for video files
 app.use(cors());
+app.use((req, res, next) => {
+  // Set additional headers for video files
+  if (req.path.endsWith('.mp4')) {
+    res.set({
+      'Accept-Ranges': 'bytes',
+      'Content-Type': 'video/mp4',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, HEAD'
+    });
+  }
+  next();
+});
 
 // Parse multipart/form-data
 import multer from 'multer';
@@ -32,8 +44,17 @@ const upload = multer({ storage: storage });
 // Add body parser for URL-encoded data
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from the public directory
-app.use(express.static('public'));
+// Serve static files from the public directory with proper options
+app.use(express.static('public', {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.mp4')) {
+      res.set({
+        'Accept-Ranges': 'bytes',
+        'Content-Type': 'video/mp4'
+      });
+    }
+  }
+}));
 
 // Create public directory if it doesn't exist
 const publicDir = path.join(__dirname, 'public');

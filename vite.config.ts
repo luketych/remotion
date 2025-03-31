@@ -18,6 +18,19 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
+      },
+      '/clips': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes, req) => {
+            if (req.url && req.url.endsWith('.mp4')) {
+              proxyRes.headers['content-type'] = 'video/mp4';
+              proxyRes.headers['accept-ranges'] = 'bytes';
+            }
+          });
+        }
       }
     },
     fs: {
