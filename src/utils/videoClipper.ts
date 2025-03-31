@@ -44,8 +44,10 @@ export async function clipVideo(
       '-ss', startTime.toString(),
       '-i', 'input.mp4',
       '-t', duration.toString(),
-      '-map', '0:v:0',       // Map only the first video stream
+      '-map', '0:v:0',       // Map the first video stream
+      '-map', '0:a:0?',      // Map the first audio stream if it exists
       '-c:v', 'copy',        // Copy video stream without re-encoding
+      '-c:a', 'aac',         // Use AAC codec for audio
       '-avoid_negative_ts', 'make_zero',  // Adjust timestamps
       '-movflags', '+faststart',          // Enable streaming
       '-f', 'mp4',           // Force MP4 format
