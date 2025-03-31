@@ -137,10 +137,23 @@ function App() {
           <div className="clipped-videos-grid">
             {clippedVideos.map(url => (
               <div key={url} className="clipped-video-item">
-                <VideoComposition
-                  src={url}
-                  startTime={0}
-                />
+                <div className="video-wrapper">
+                  <VideoComposition
+                    src={url}
+                    startTime={0}
+                  />
+                  <button 
+                    className="load-clip-button"
+                    onClick={() => {
+                      setVideoUrl(url);
+                      setStartTime(0);
+                      setEndTime(undefined);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    Load into Clipper
+                  </button>
+                </div>
               </div>
             ))}
           </div>
