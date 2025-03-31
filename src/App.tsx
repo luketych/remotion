@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { VideoComposition } from './components/VideoComposition'
 import { clipVideo } from './utils/videoClipper'
 import './App.css'
@@ -10,19 +10,51 @@ type VideoProps = {
   [key: string]: unknown;
 };
 
-type ClippedVideo = {
+type ClipInfo = {
+  name: string;
   url: string;
-  startTime: number;
-  endTime: number;
+  size: number;
+  created: string;
 };
 
 function App() {
   const [videoUrl, setVideoUrl] = useState<string>('/sample-video1.mp4')
   const [startTime, setStartTime] = useState<number>(0)
   const [endTime, setEndTime] = useState<number | undefined>()
-  const [clippedVideos, setClippedVideos] = useState<ClippedVideo[]>([])
+  const [clippedVideos, setClippedVideos] = useState<string[]>([])
   const [isClipping, setIsClipping] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadExistingClips = async () => {
+      try {
+        console.log('Fetching clips from server...');
+        const response = await fetch('/api/clips');
+        if (!response.ok) throw new Error('Failed to fetch clips');
+        
+        const clips: ClipInfo[] = await response.json();
+        console.log('Server returned clips:', clips);
+        
+        const videoUrls = clips.map(clip => clip.url);
+        console.log('Setting video URLs:', videoUrls);
+        setClippedVideos(videoUrls);
+      } catch (error) {
+        console.error('Error loading clips:', error);
+      }
+    };
+
+    console.log('Initial clips load');
+    loadExistingClips();
+
+    // Check for new clips every 2 seconds
+    const interval = setInterval(loadExistingClips, 2000);
+    console.log('Clip polling initialized');
+
+    return () => {
+      console.log('Cleaning up clip polling');
+      clearInterval(interval);
+    };
+  }, []);
 
   const videoProps: VideoProps = {
     src: videoUrl,
@@ -45,14 +77,10 @@ function App() {
       const outputFileName = `clip_${Date.now()}.mp4`;
       console.log('Creating clip with filename:', outputFileName);
       
-      const url = await clipVideo(videoUrl, startTime, endTime, outputFileName);
-      console.log('Clip created successfully:', url);
+      const clipUrl = await clipVideo(videoUrl, startTime, endTime, outputFileName);
+      console.log('Clip created successfully at:', clipUrl);
       
-      setClippedVideos(prev => [...prev, {
-        url,  // Use the full URL returned by clipVideo (includes /clips/)
-        startTime,
-        endTime,
-      }]);
+      // The polling will automatically pick up the new clip
     } catch (error) {
       console.error('Error in handleClip:', error);
       setError(error instanceof Error ? error.message : 'Failed to clip video. Please try again.');
@@ -105,18 +133,14 @@ function App() {
       )}
       {clippedVideos.length > 0 && (
         <div className="clipped-videos">
-          <h2>Clipped Videos</h2>
+          <h2>Clipped Videos ({clippedVideos.length})</h2>
           <div className="clipped-videos-grid">
-            {clippedVideos.map((video, index) => (
-              <div key={index} className="clipped-video-item">
+            {clippedVideos.map(url => (
+              <div key={url} className="clipped-video-item">
                 <VideoComposition
-                  src={video.url}
+                  src={url}
                   startTime={0}
                 />
-                <div className="video-info">
-                  <p>Start: {video.startTime}s</p>
-                  <p>End: {video.endTime}s</p>
-                </div>
               </div>
             ))}
           </div>

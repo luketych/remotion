@@ -69,6 +69,30 @@ if (!fs.existsSync(clipsDir)) {
 }
 
 // Endpoint to save video
+// Get all clips
+app.get('/api/clips', (req, res) => {
+  try {
+    const files = fs.readdirSync(clipsDir);
+    const clips = files
+      .filter(file => file.endsWith('.mp4'))
+      .map(file => {
+        const stats = fs.statSync(path.join(clipsDir, file));
+        return {
+          name: file,
+          url: `/clips/${file}`,
+          size: stats.size,
+          created: stats.birthtime
+        };
+      })
+      .sort((a, b) => b.created.getTime() - a.created.getTime()); // Sort by newest first
+
+    res.json(clips);
+  } catch (error) {
+    console.error('Error getting clips:', error);
+    res.status(500).json({ error: 'Failed to get clips' });
+  }
+});
+
 app.post('/api/save-video', upload.single('videoData'), (req, res) => {
   console.log('Received request to save video');
   console.log('Request body:', req.body);
